@@ -1,9 +1,11 @@
-import { ArrowRight, Clock, Layers } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Clock, Layers } from "lucide-react";
 import NavBar from "../../components/NavBar";
 import type { Route } from "./+types/home";
 import { Button } from "../../components/ui";
+import Upload from "../../components/Upload";
+import { useNavigate } from "react-router";
 
-export function meta(args: Route.MetaArgs) {
+export function meta(_: Route.MetaArgs) {
   return [
     { title: "New React Router App" },
     { name: "description", content: "Welcome to React Router!" },
@@ -11,6 +13,13 @@ export function meta(args: Route.MetaArgs) {
 }
 
 export default function Home() {
+  const navigate = useNavigate();
+
+  const handleUploadComplete = (base64Image: string) => {
+    const newId = Date.now().toString();
+    navigate(`/visualizer/${newId}`, { state: { image: base64Image } });
+  };
+
   return (
     <div className="home">
       <NavBar />
@@ -20,7 +29,7 @@ export default function Home() {
           <div className="dot">
             <div className="pulse"></div>
           </div>
-          <p>Introducing Toomify 2.0</p>
+          <p>Introducing Roomify 2.0</p>
         </div>
 
         <h1>Build beautiful spaces at the speed of thought with Roomify</h1>
@@ -35,12 +44,12 @@ export default function Home() {
             Start Building <ArrowRight className="icon" />
           </a>
 
-          <Button variant="outline" className="demo">
+          <Button variant="outline" size="lg" className="demo">
             Watch Demo
           </Button>
         </div>
 
-        <div className="upload-shell">
+        <div id="upload" className="upload-shell">
           <div className="grid-overlay" />
 
           <div className="upload-card">
@@ -53,7 +62,7 @@ export default function Home() {
               <p>Supports JPG, PNG, formats up to 10MB</p>
             </div>
 
-            <p>Upload images</p>
+            <Upload onComplete={handleUploadComplete} />
           </div>
         </div>
       </section>
@@ -86,12 +95,12 @@ export default function Home() {
                   <div className="meta">
                     <Clock size={12} />
                     <span>{new Date("01.01.2027").toLocaleDateString()}</span>
-                    <span>By JS Mastery</span>
+                    <span>By Rudra Pulami Magar</span>
                   </div>
                 </div>
 
                 <div className="arrow">
-                  <ArrowRight size={18} />
+                  <ArrowUpRight size={18} />
                 </div>
               </div>
             </div>
