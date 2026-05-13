@@ -134,7 +134,7 @@ const Upload = ({ onComplete }: UploadProps) => {
             type="file"
             className="drop-input"
             accept={ALLOWED_EXTENSIONS.join(",")}
-            disabled={isSignedIn !== true}
+            disabled={!isSignedIn}
             onChange={handleChange}
           />
           <div className="drop-content">
