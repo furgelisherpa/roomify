@@ -1,16 +1,17 @@
-import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate, useOutletContext, useParams } from "react-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useOutletContext, useParams } from "react-router";
 import { generate3DView } from "../../lib/ai.action";
 import { Box, Download, Share2, RefreshCcw, X } from "lucide-react";
 import { Button } from "../../components/ui";
 import { createProject, getProjectById } from "../../lib/puter.action";
+import { ReactCompareSlider, ReactCompareSliderImage } from "react-compare-slider";
 
 const VisualizerId = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { userId } = useOutletContext<AuthContext>();
 
-  const hasInitialGenerated = useRef(false);
+  const hasInitialGeneratedRef = useRef(false);
 
   const [project, setProject] = useState<DesignItem | null>(null);
   const [isProjectLoading, setIsProjectLoading] = useState(true);
@@ -19,38 +20,65 @@ const VisualizerId = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleBack = () => navigate("/");
-
-  const runGeneration = async (item: DesignItem) => {
-    if (!id || !item.sourceImage) return;
+  const handleExport = async () => {
+    if (!currentImage) return;
 
     try {
-      setIsProcessing(true);
-      const result = await generate3DView({ sourceImage: item.sourceImage });
+      const response = await fetch(currentImage);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
 
-      if (result.renderedImage) {
-        setCurrentImage(result.renderedImage);
-
-        const updatedItem = {
-          ...item,
-          renderedImage: result.renderedImage,
-          renderedPath: result.renderedPath,
-          timestamp: Date.now(),
-          ownerId: item.ownerId ?? userId ?? null,
-          isPublic: item.isPublic ?? false,
-        };
-
-        const saved = await createProject({ item: updatedItem, visibility: "private" });
-        if (saved) {
-          setProject(saved);
-          setCurrentImage(saved.renderedImage || result.renderedImage);
-        }
-      }
-    } catch (error) {
-      console.error("Generation failed", error);
-    } finally {
-      setIsProcessing(false);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `roomify-${id || "render"}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      console.error("Export failed", e);
+      // Fallback to direct href if blob fails
+      const link = document.createElement("a");
+      link.href = currentImage;
+      link.download = `roomify-${id || "render"}.png`;
+      link.click();
     }
   };
+
+  const runGeneration = useCallback(
+    async (item: DesignItem) => {
+      if (!id || !item.sourceImage) return;
+
+      try {
+        setIsProcessing(true);
+        const result = await generate3DView({ sourceImage: item.sourceImage });
+
+        if (result.renderedImage) {
+          setCurrentImage(result.renderedImage);
+
+          const updatedItem = {
+            ...item,
+            renderedImage: result.renderedImage,
+            renderedPath: result.renderedPath,
+            timestamp: Date.now(),
+            ownerId: item.ownerId ?? userId ?? null,
+            isPublic: item.isPublic ?? false,
+          };
+
+          const saved = await createProject({ item: updatedItem, visibility: "private" });
+          if (saved) {
+            setProject(saved);
+            setCurrentImage(saved.renderedImage || result.renderedImage);
+          }
+        }
+      } catch (error) {
+        console.error("Generation failed", error);
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [id, userId],
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -70,7 +98,7 @@ const VisualizerId = () => {
       setProject(fetchedProject);
       setCurrentImage(fetchedProject?.renderedImage || null);
       setIsProjectLoading(false);
-      hasInitialGenerated.current = false;
+      hasInitialGeneratedRef.current = false;
     };
 
     loadProject();
@@ -81,26 +109,23 @@ const VisualizerId = () => {
   }, [id]);
 
   useEffect(() => {
-    if (isProjectLoading || hasInitialGenerated.current || !project?.sourceImage) return;
+    if (isProjectLoading || hasInitialGeneratedRef.current || !project?.sourceImage) return;
 
-    if (project.renderedImage) {
-      setCurrentImage(project.renderedImage);
-      hasInitialGenerated.current = true;
-      return;
+    hasInitialGeneratedRef.current = true;
+
+    if (!project.renderedImage) {
+      void runGeneration(project);
     }
-
-    hasInitialGenerated.current = true;
-    void runGeneration(project);
-  }, [project, isProjectLoading]);
+  }, [project, isProjectLoading, runGeneration]);
 
   return (
     <div className="visualizer">
       <nav className="topbar">
-        <div className="brand">
+        <Link to="/" className="brand">
           <Box className="logo" />
 
           <span className="name">Roomify</span>
-        </div>
+        </Link>
         <Button variant="ghost" size="sm" onClick={handleBack}>
           <X className="icon" />
           Exit Editor
@@ -119,21 +144,17 @@ const VisualizerId = () => {
             <div className="panel-actions">
               <Button
                 size="sm"
-                onClick={() => {}}
+                onClick={handleExport}
                 className="expert"
                 disabled={!currentImage || isProcessing}
               >
                 <Download className="mr-2 h-4 w-4" />
-                Export
-              </Button>
-              <Button size="sm" onClick={() => {}} className="share">
-                <Share2 className="mr-2 h-4 w-4" />
-                Share
+                Download
               </Button>
             </div>
           </div>
 
-          <div className={`rendeer-area ${isProcessing ? "is-processing" : ""}`}>
+          <div className={`render-area ${isProcessing ? "is-processing" : ""}`}>
             {currentImage ? (
               <img src={currentImage} alt="AI Render" className="render-img" />
             ) : (
@@ -149,8 +170,47 @@ const VisualizerId = () => {
                 <div className="rendering-card">
                   <RefreshCcw className="spinner" />
                   <span className="title">Rendering...</span>
-                  <span className="subtitle">Generating your 3D visialization</span>
+                  <span className="subtitle">Generating your 3D visualization</span>
                 </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="panel compare">
+          <div className="panel-header">
+            <div className="panel-meta">
+              <p>Comparison</p>
+              <h3>Before and After</h3>
+            </div>
+            <div className="hint">Drag to compare</div>
+          </div>
+
+          <div className="compare-stage">
+            {project?.sourceImage && currentImage ? (
+              <ReactCompareSlider
+                defaultValue={50}
+                style={{ width: "100%", height: "100%" }}
+                itemOne={
+                  <ReactCompareSliderImage
+                    src={project?.sourceImage}
+                    alt="before"
+                    className="compare-img"
+                  />
+                }
+                itemTwo={
+                  <ReactCompareSliderImage
+                    src={currentImage || project?.renderedImage || undefined}
+                    alt="after"
+                    className="compare-img"
+                  />
+                }
+              />
+            ) : (
+              <div className="compare-fallback">
+                {project?.sourceImage && (
+                  <img src={project.sourceImage} alt="Before" className="compare-img" />
+                )}
               </div>
             )}
           </div>

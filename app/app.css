@@ -113,7 +113,7 @@
         @apply flex items-center space-x-8;
 
         .brand {
-          @apply flex cursor-pointer items-center space-x-2;
+          @apply flex cursor-pointer items-center space-x-2 no-underline!;
 
           .logo {
             @apply h-6 w-6 text-black;
@@ -156,7 +156,7 @@
   }
 
   .auth-modal {
-    @apply absolute inset-0 z-60 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm;
+    @apply fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md;
 
     .panel {
       @apply w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 text-center shadow-2xl;
@@ -188,6 +188,122 @@
           @apply mt-2 text-xs text-zinc-400 hover:text-black;
         }
       }
+
+      .features {
+        @apply mb-8 grid grid-cols-2 gap-4 rounded-xl bg-zinc-50 p-4;
+
+        .feature {
+          @apply flex items-center space-x-2;
+
+          span {
+            @apply text-[10px] font-bold tracking-wide text-zinc-600 uppercase;
+          }
+        }
+      }
+
+      &.auth-panel {
+        @apply relative max-w-lg p-0 text-left;
+
+        .close-btn {
+          @apply absolute top-4 right-4 text-zinc-400 hover:text-black;
+        }
+
+        .auth-header {
+          @apply border-b border-zinc-100 p-8 text-center;
+
+          .logo-box {
+            @apply bg-primary mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl shadow-lg;
+
+            .logo-icon {
+              @apply h-6 w-6 text-white;
+            }
+          }
+
+          h3 {
+            @apply font-serif text-2xl font-bold text-black;
+          }
+
+          p {
+            @apply mt-2 text-sm text-zinc-500;
+          }
+        }
+
+        .auth-body {
+          @apply space-y-6 p-8;
+
+          .features-grid {
+            @apply mb-4 grid grid-cols-2 gap-3;
+
+            .feature-item {
+              @apply flex items-center gap-2 rounded-lg bg-zinc-50 p-3;
+
+              span {
+                @apply text-[10px] font-bold tracking-tight text-zinc-600 uppercase;
+              }
+            }
+          }
+
+          .submit-btn {
+            @apply bg-primary h-12 w-full text-sm font-bold tracking-wide text-white uppercase shadow-lg hover:bg-orange-600;
+          }
+
+          .cancel-text {
+            @apply w-full text-xs font-medium text-zinc-400 transition-colors hover:text-zinc-600;
+          }
+        }
+
+        .auth-footer {
+          @apply border-t border-zinc-100 bg-zinc-50 p-6 text-center;
+
+          p {
+            @apply text-sm text-zinc-500;
+
+            .toggle-btn {
+              @apply ml-1 font-bold text-orange-600 hover:underline;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .share {
+    &.shared {
+      @apply border-green-200 bg-green-50 text-green-600;
+    }
+  }
+
+  .community-page {
+    .community-hero {
+      @apply mx-auto max-w-4xl px-6 py-20 text-center;
+
+      .announce {
+        @apply mb-8 inline-flex items-center gap-2 rounded-full border border-orange-100 bg-orange-50/50 px-3 py-1;
+
+        .dot {
+          @apply relative h-2 w-2 rounded-full bg-orange-500;
+          .pulse {
+            @apply absolute inset-0 animate-ping rounded-full bg-orange-400 opacity-75;
+          }
+        }
+
+        p {
+          @apply text-[10px] font-bold tracking-widest text-orange-600 uppercase;
+        }
+      }
+
+      h1 {
+        @apply font-serif text-5xl leading-tight font-bold text-black md:text-6xl;
+      }
+
+      .subtitle {
+        @apply mx-auto mt-6 max-w-2xl text-lg text-zinc-500;
+      }
+    }
+
+    .loading-state,
+    .empty-state {
+      @apply flex flex-col items-center justify-center gap-4 py-20 text-zinc-400;
     }
   }
 
@@ -270,7 +386,7 @@
       @apply mb-6 flex w-full max-w-6xl items-center justify-between px-2;
 
       .brand {
-        @apply flex cursor-pointer items-center space-x-2;
+        @apply flex cursor-pointer items-center space-x-2 no-underline!;
 
         .logo {
           @apply h-6 w-6 text-black;

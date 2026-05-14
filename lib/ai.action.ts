@@ -26,6 +26,13 @@ export async function fetchAsDataUrl(url: string): Promise<string> {
 export const generate3DView = async ({ sourceImage }: Generate3DViewParams) => {
   const dataUrl = sourceImage.startsWith("data:") ? sourceImage : await fetchAsDataUrl(sourceImage);
 
+  // Get image dimensions to preserve aspect ratio
+  const dimensions = await new Promise<{ w: number; h: number }>((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ w: img.width, h: img.height });
+    img.src = dataUrl;
+  });
+
   const base64Data = dataUrl.split(",")[1];
   const mimeType = dataUrl.split(";")[0].split(":")[1];
 
@@ -36,7 +43,7 @@ export const generate3DView = async ({ sourceImage }: Generate3DViewParams) => {
     model: "gemini-2.5-flash-image-preview",
     input_image: base64Data,
     input_image_mime_type: mimeType,
-    ratio: { w: 1024, h: 1024 },
+    ratio: dimensions,
   });
 
   const rawImageUrl = (response as HTMLImageElement).src ?? null;

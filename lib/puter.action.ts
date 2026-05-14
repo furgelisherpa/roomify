@@ -4,7 +4,7 @@ import { isHostedUrl } from "./utils";
 import { PUTER_WORKER_URL } from "./constants";
 
 export const signIn = async () => await puter.auth.signIn();
-export const signOut = () => puter.auth.signOut();
+export const signOut = async () => await puter.auth.signOut();
 
 export const getCurrentUser = async () => {
   try {
@@ -19,7 +19,7 @@ export const createProject = async ({
   visibility = "private",
 }: CreateProjectParams): Promise<DesignItem | null | undefined> => {
   if (!PUTER_WORKER_URL) {
-    console.warn("Missing VITE_PUTER_WORKER_URL; skip history fetch;");
+    console.warn("Missing VITE_PUTER_WORKER_URL; skip project save;");
     return null;
   }
   const projectId = item.id;
@@ -133,5 +133,49 @@ export const getProjectById = async ({ id }: { id: string }) => {
   } catch (error) {
     console.error("Failed to fetch project:", error);
     return null;
+  }
+};
+
+export const shareProject = async ({ item }: { item: DesignItem }) => {
+  if (!PUTER_WORKER_URL) return null;
+
+  try {
+    const response = await puter.workers.exec(`${PUTER_WORKER_URL}/api/community/share`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ project: item }),
+    });
+
+    if (!response.ok) {
+      console.error("Failed to share project", await response.text());
+      return null;
+    }
+
+    const data = (await response.json()) as { shared: boolean };
+    return data.shared;
+  } catch (e) {
+    console.error("Failed to share project", e);
+    return null;
+  }
+};
+
+export const getCommunityProjects = async () => {
+  if (!PUTER_WORKER_URL) return [];
+
+  try {
+    const response = await puter.workers.exec(`${PUTER_WORKER_URL}/api/community/list`, {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch community projects", await response.text());
+      return [];
+    }
+
+    const data = (await response.json()) as { projects?: DesignItem[] | null };
+    return Array.isArray(data?.projects) ? data?.projects : [];
+  } catch (e) {
+    console.error("Failed to get community projects", e);
+    return [];
   }
 };

@@ -46,7 +46,7 @@ const Upload = ({ onComplete }: UploadProps) => {
   const [error, setError] = useState<string | null>(null);
   const [cadHint, setCadHint] = useState<string | null>(null);
   const base64Ref = useRef<string | null>(null);
-  const { isSignedIn } = useOutletContext<AuthContext>();
+  const { isSignedIn, openAuth } = useOutletContext<AuthContext>();
 
   useEffect(() => {
     if (progress !== 100 || !base64Ref.current) return;
@@ -129,13 +129,23 @@ const Upload = ({ onComplete }: UploadProps) => {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          onClick={() => {
+            if (!isSignedIn) {
+              openAuth();
+            }
+          }}
         >
           <input
             type="file"
             className="drop-input"
             accept={ALLOWED_EXTENSIONS.join(",")}
-            disabled={!isSignedIn}
             onChange={handleChange}
+            onClick={(e) => {
+              if (!isSignedIn) {
+                e.preventDefault();
+                openAuth();
+              }
+            }}
           />
           <div className="drop-content">
             <div className="drop-icon">
@@ -146,7 +156,7 @@ const Upload = ({ onComplete }: UploadProps) => {
                 ? "Click to upload or drag and drop"
                 : "Sign in or sign up with Puter to upload"}
             </p>
-            <p className="help">JPG, PNG, TIFF, BMP, WebP — Max 25MB</p>
+            <p className="help">JPG, PNG, WebP — Max 25MB</p>
           </div>
         </div>
       ) : (

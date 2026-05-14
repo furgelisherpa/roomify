@@ -15,6 +15,7 @@ import {
   signIn as puterSignIn,
   signOut as puterSignOut,
 } from "../lib/puter.action";
+import AuthModal from "../components/AuthModal";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -55,6 +56,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const [authState, setAuthState] = useState<AuthState>(DEFAULT_AUTH_STATE);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const refreshAuth = async () => {
     try {
@@ -74,23 +76,63 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
+      // Check if we should skip auto-auth (set after manual logout)
+      const skipAutoAuth = localStorage.getItem("skipAutoAuth") === "true";
+      if (skipAutoAuth) {
+        localStorage.removeItem("skipAutoAuth");
+        return;
+      }
       await refreshAuth();
     })();
   }, []);
 
   const signIn = async () => {
+    localStorage.removeItem("skipAutoAuth");
     await puterSignIn();
     return await refreshAuth();
   };
 
   const signOut = async () => {
-    puterSignOut();
-    return await refreshAuth();
+    try {
+      // Prevent auto-login on the next reload
+      localStorage.setItem("skipAutoAuth", "true");
+      await puterSignOut();
+      setAuthState(DEFAULT_AUTH_STATE);
+      // Brief delay and then redirect
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 500);
+    } catch (error) {
+      console.error("Logout failed:", error);
+      window.location.reload();
+    }
+    return true;
   };
 
   return (
     <main className="bg-background text-foreground relative z-10 min-h-screen">
-      <Outlet context={{ ...authState, refreshAuth, signIn, signOut }} />
+      <Outlet
+        context={{
+          ...authState,
+          refreshAuth,
+          signIn,
+          signOut,
+          openAuth: () => setIsAuthModalOpen(true),
+        }}
+      />
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSignIn={async () => {
+          const success = await signIn();
+          if (success && window.location.pathname === "/") {
+            const uploadSection = document.getElementById("upload");
+            if (uploadSection) {
+              uploadSection.scrollIntoView({ behavior: "smooth" });
+            }
+          }
+        }}
+      />
     </main>
   );
 }

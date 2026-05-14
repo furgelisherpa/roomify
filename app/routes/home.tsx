@@ -3,7 +3,7 @@ import NavBar from "../../components/NavBar";
 import type { Route } from "./+types/home";
 import { Button } from "../../components/ui";
 import Upload from "../../components/Upload";
-import { useNavigate } from "react-router";
+import { useNavigate, useOutletContext } from "react-router";
 import { useEffect, useRef, useState } from "react";
 import { createProject, getProjects } from "../../lib/puter.action";
 
@@ -16,6 +16,7 @@ export function meta(_: Route.MetaArgs) {
 
 export default function Home() {
   const navigate = useNavigate();
+  const { isSignedIn, openAuth } = useOutletContext<AuthContext>();
   const [projects, setProjects] = useState<DesignItem[]>([]);
   const isCreatingProjectRef = useRef(false);
 
@@ -61,7 +62,9 @@ export default function Home() {
       setProjects(items);
     };
     fetchProjects();
-  }, []);
+
+    // If user arrives via #upload link, just scroll (already handled by browser or other effects)
+  }, [isSignedIn]);
 
   return (
     <div className="home">
@@ -83,26 +86,37 @@ export default function Home() {
         </p>
 
         <div className="actions">
-          <a href="#upload" className="cta">
+          <a
+            href="#upload"
+            onClick={(e) => {
+              if (window.location.pathname === "/") {
+                e.preventDefault();
+                document.getElementById("upload")?.scrollIntoView({ behavior: "smooth" });
+              }
+            }}
+            className="cta"
+          >
             Start Building <ArrowRight className="icon" />
           </a>
-
-          <Button variant="outline" size="lg" className="demo">
-            Watch Demo
-          </Button>
         </div>
 
         <div id="upload" className="upload-shell">
           <div className="grid-overlay" />
 
           <div className="upload-card">
-            <div className="upload-head">
+            <div
+              className="upload-head"
+              onClick={() => {
+                if (!isSignedIn) openAuth();
+              }}
+              style={{ cursor: !isSignedIn ? "pointer" : "default" }}
+            >
               <div className="upload-icon">
                 <Layers className="icon" />
               </div>
 
               <h3>Upload your floor plan</h3>
-              <p>Supports JPG, PNG, formats up to 10MB</p>
+              <p>Supports JPG, PNG, WebP — Max 25MB</p>
             </div>
 
             <Upload onComplete={handleUploadComplete} />
@@ -110,51 +124,49 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="projects">
-        <div className="section-inner">
-          <div className="section-head">
-            <div className="copy">
-              <h2>Projects</h2>
-              <p>Your latest work and shared community projects, all in one place.</p>
+      {isSignedIn && (
+        <section className="projects">
+          <div className="section-inner">
+            <div className="section-head">
+              <div className="copy">
+                <h2>Projects</h2>
+                <p>Your latest work and shared community projects, all in one place.</p>
+              </div>
             </div>
-          </div>
 
-          <div className="projects-grid">
-            {projects.map(({ id, name, renderedImage, sourceImage, timestamp }) => (
-              <div
-                key={id}
-                className="project-card group"
-                onClick={() => navigate(`/visualizer/${id}`)}
-              >
-                <div className="preview">
-                  <img src={renderedImage || sourceImage} alt="Project" />
-
-                  <div className="badge">
-                    <span>Community</span>
+            <div className="projects-grid">
+              {projects.map(({ id, name, renderedImage, sourceImage, timestamp }) => (
+                <div
+                  key={id}
+                  className="project-card group"
+                  onClick={() => navigate(`/visualizer/${id}`)}
+                >
+                  <div className="preview">
+                    <img src={renderedImage || sourceImage} alt="Project" />
                   </div>
-                </div>
 
-                <div className="card-body">
-                  <div>
-                    <h3>{name}</h3>
-                    <div className="meta">
-                      <Clock size={12} />
-                      <span suppressHydrationWarning>
-                        {new Date(timestamp).toLocaleDateString()}
-                      </span>
-                      <span>By Rudra Pulami Magar</span>
+                  <div className="card-body">
+                    <div>
+                      <h3>{name}</h3>
+                      <div className="meta">
+                        <Clock size={12} />
+                        <span suppressHydrationWarning>
+                          {new Date(timestamp).toLocaleDateString()}
+                        </span>
+                        <span>By Rudra Pulami Magar</span>
+                      </div>
+                    </div>
+
+                    <div className="arrow">
+                      <ArrowUpRight size={18} />
                     </div>
                   </div>
-
-                  <div className="arrow">
-                    <ArrowUpRight size={18} />
-                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }

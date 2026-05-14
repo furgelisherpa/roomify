@@ -1,9 +1,9 @@
 import { Box } from "lucide-react";
 import { Button } from "./ui";
-import { useOutletContext } from "react-router";
+import { Link, useOutletContext } from "react-router";
 
 export default function NavBar() {
-  const { isSignedIn, userName, signIn, signOut } = useOutletContext<AuthContext>();
+  const { isSignedIn, userName, signIn, signOut, openAuth } = useOutletContext<AuthContext>();
 
   const handleAuthClick = async () => {
     if (isSignedIn) {
@@ -14,9 +14,9 @@ export default function NavBar() {
       }
     } else {
       try {
-        await signIn();
+        openAuth();
       } catch (e) {
-        console.error(`Puter sign in failed: ${e}`);
+        console.error(`Opening auth modal failed: ${e}`);
       }
     }
   };
@@ -25,16 +25,10 @@ export default function NavBar() {
     <header className="navbar">
       <nav className="inner">
         <div className="left">
-          <div className="brand">
+          <Link to="/" className="brand">
             <Box className="logo" />
             <span className="name">Roomify</span>
-          </div>
-          <ul className="links">
-            <a href="#">Product</a>
-            <a href="#">Pricing</a>
-            <a href="#">Community</a>
-            <a href="#">Enterprise</a>
-          </ul>
+          </Link>
         </div>
 
         <div className="actions">
@@ -50,7 +44,16 @@ export default function NavBar() {
               <Button onClick={handleAuthClick} size="sm" variant="ghost">
                 Login
               </Button>
-              <a href="#upload" className="cta">
+              <a
+                href="/#upload"
+                onClick={(e) => {
+                  if (window.location.pathname === "/") {
+                    e.preventDefault();
+                    document.getElementById("upload")?.scrollIntoView({ behavior: "smooth" });
+                  }
+                }}
+                className="cta"
+              >
                 Get Started
               </a>
             </>

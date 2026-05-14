@@ -21,23 +21,9 @@ export const IMAGE_RENDER_DIMENSION = 1024;
 
 export const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
-export const ALLOWED_EXTENSIONS = [
-  ".jpg",
-  ".jpeg",
-  ".png",
-  ".webp",
-  ".tiff",
-  ".tif",
-  ".bmp",
-] as const;
+export const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"] as const;
 
-export const ALLOWED_MIME_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/tiff",
-  "image/bmp",
-] as const;
+export const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
 export const CAD_EXTENSIONS = [
   ".dwg",
